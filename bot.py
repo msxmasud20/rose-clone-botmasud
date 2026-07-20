@@ -4,7 +4,6 @@ import sqlite3
 import json
 import random
 import string
-import asyncio
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -676,11 +675,13 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("⚠️ কিছু একটা ভুল হয়েছে!")
 
 # ========== MAIN ==========
-async def main():
+def main():
     logger.info("🌹 RoseGuard Bot starting...")
     
+    # Build application
     application = Application.builder().token(BOT_TOKEN).build()
     
+    # Add handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("id", id_command))
@@ -706,22 +707,17 @@ async def main():
     
     application.add_error_handler(error_handler)
     
-    # PTB v21 Webhook
+    # Webhook setup for Render
     webhook_url = f"{RENDER_EXTERNAL_URL}/{BOT_TOKEN}"
     logger.info(f"🌐 Webhook URL: {webhook_url}")
     
-    await application.initialize()
-    await application.start()
-    
-    await application.updater.start_webhook(
+    # Use run_webhook (sync method, no async needed)
+    application.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         webhook_url=webhook_url,
-        secret_token=BOT_TOKEN
+        secret_token=BOT_TOKEN,
     )
-    
-    # Keep running
-    await application.updater.idle()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
