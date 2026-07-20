@@ -1,2 +1,3 @@
-# rose-clone-botmasud
+# 🌹 RoseGuard - Telegram Group Management Bot
+
 
