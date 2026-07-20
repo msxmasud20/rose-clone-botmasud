@@ -4,6 +4,7 @@ import sqlite3
 import json
 import random
 import string
+import asyncio
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -16,7 +17,6 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters,
     ContextTypes,
-    JobQueue
 )
 
 # ========== CONFIG ==========
@@ -676,7 +676,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("⚠️ কিছু একটা ভুল হয়েছে!")
 
 # ========== MAIN ==========
-def main():
+async def main():
     logger.info("🌹 RoseGuard Bot starting...")
     
     application = Application.builder().token(BOT_TOKEN).build()
@@ -706,16 +706,22 @@ def main():
     
     application.add_error_handler(error_handler)
     
-    # WEBHOOK ONLY - NO POLLING
+    # PTB v21 Webhook
     webhook_url = f"{RENDER_EXTERNAL_URL}/{BOT_TOKEN}"
     logger.info(f"🌐 Webhook URL: {webhook_url}")
     
-    application.run_webhook(
+    await application.initialize()
+    await application.start()
+    
+    await application.updater.start_webhook(
         listen="0.0.0.0",
         port=PORT,
         webhook_url=webhook_url,
         secret_token=BOT_TOKEN
     )
+    
+    # Keep running
+    await application.updater.idle()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
