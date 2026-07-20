@@ -15,21 +15,19 @@ from telegram.ext import (
     ChatMemberHandler,
     CallbackQueryHandler,
     filters,
-    ContextTypes
+    ContextTypes,
+    JobQueue
 )
 
 # ========== CONFIG ==========
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8989482245:AAHK2XcjjqS6_Te84Jv3GZuNEV0STaz5BnU")
 PORT = int(os.getenv("PORT", "8443"))
-RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "")
 ADMIN_IDS = [7875919383]
 
 DEFAULT_SETTINGS = {
     "welcome_enabled": True,
     "welcome_message": "👋 স্বাগতম {mention}!\n\n📋 গ্রুপের নিয়ম:\n• স্প্যাম করবে না\n• অশ্লীল কথা বলবে না\n• অননুমোদিত লিংক শেয়ার করবে না",
-    "antiflood_enabled": True,
-    "antiflood_limit": 5,
-    "antiflood_action": "mute",
     "link_filter_enabled": True,
     "allowed_links": ["t.me"],
     "word_filter_enabled": True,
@@ -549,8 +547,8 @@ async def message_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode='HTML'
                 )
                 return
-    filters = db.get_filters(chat.id)
-    for keyword, response in filters.items():
+    filters_dict = db.get_filters(chat.id)
+    for keyword, response in filters_dict.items():
         if keyword.lower() in text:
             await message.reply_text(response)
             return
@@ -708,18 +706,16 @@ def main():
     
     application.add_error_handler(error_handler)
     
-    if RENDER_EXTERNAL_URL:
-        webhook_url = f"{RENDER_EXTERNAL_URL}/{BOT_TOKEN}"
-        logger.info(f"🌐 Webhook: {webhook_url}")
-        application.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            webhook_url=webhook_url,
-            secret_token=BOT_TOKEN
-        )
-    else:
-        logger.info("🔄 Polling mode...")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # WEBHOOK ONLY - NO POLLING
+    webhook_url = f"{RENDER_EXTERNAL_URL}/{BOT_TOKEN}"
+    logger.info(f"🌐 Webhook URL: {webhook_url}")
+    
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=webhook_url,
+        secret_token=BOT_TOKEN
+    )
 
 if __name__ == "__main__":
     main()
